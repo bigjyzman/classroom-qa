@@ -783,7 +783,21 @@ header h1 {
   .modal-handle { display: none; }
   .header-right .user-name { display: inline; }
 }
+@media (max-width: 480px) {
+  header { padding: 10px 12px; }
+  header h1 { font-size: 16px; }
+  .header-right .user-name { display: none; }
+  .board-toolbar { gap: 8px; }
+  .board-toolbar .filter-btn { padding: 5px 12px; font-size: 12px; }
+  .btn-ask { padding: 6px 14px; font-size: 13px; }
+  #boardView main { padding: 12px; }
+  .question-card { padding: 12px 14px; }
+  .question-card .card-content { font-size: 14px; }
+  .card-answer-item { font-size: 12px; padding: 4px 8px; }
+  .modal-content { padding: 20px 16px; }
+}
 @media (max-width: 380px) {
   .login-container { padding: 24px 18px; }
   .board-toolbar .filter-btn { padding: 4px 10px; font-size: 12px; }
+  .btn-ask { padding: 5px 12px; font-size: 12px; }
 }
