@@ -518,18 +518,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Restore student name from localStorage
+  // 页面加载时自动登出，强制显示登录页
+  auth.signOut().catch(() => {});
   const savedName = localStorage.getItem('qa_displayName');
   if (savedName) $('studentName').value = savedName;
-
-  // 页面加载时清除任何残留的登录状态，强制从登录页开始
-  auth.signOut().then(() => {
-    const savedName = localStorage.getItem('qa_displayName');
-    if (savedName) $('studentName').value = savedName;
-    showView('login');
-  }).catch(() => {
-    const savedName = localStorage.getItem('qa_displayName');
-    if (savedName) $('studentName').value = savedName;
-    showView('login');
-  });
+  showView('login');
 });
