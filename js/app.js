@@ -237,7 +237,7 @@ function renderQuestionCard(q) {
   const isPrivate = q.visibility === 'teacher_only';
   const answerCount = q.answerCount || 0;
   const isOwner = state.user && q.authorId === state.user.uid;
-  const latest = q.latestAnswer;
+  const recent = q.recentAnswers || [];
 
   return `
     <div class="question-card ${isPrivate ? 'teacher-only' : ''}" onclick="openQuestionDetail('${q.id}')">
@@ -251,10 +251,14 @@ function renderQuestionCard(q) {
         </div>
       </div>
       <div class="card-content">${escapeHtml(q.content)}</div>
-      ${latest ? `
-      <div class="card-latest-answer">
-        <span class="latest-answer-author">${escapeHtml(latest.authorName)}</span>
-        <span class="latest-answer-content">${escapeHtml(latest.content)}</span>
+      ${recent.length > 0 ? `
+      <div class="card-answers-preview">
+        ${recent.map(a => `
+        <div class="card-answer-item">
+          <span class="card-answer-author">${escapeHtml(a.authorName)}</span>
+          <span class="card-answer-text">${escapeHtml(a.content)}</span>
+        </div>`).join('')}
+        ${answerCount > 3 ? `<div class="card-answers-more">查看全部 ${answerCount} 条回答</div>` : ''}
       </div>` : ''}
       <div class="card-footer">
         <span class="card-stat">💬 ${answerCount} 个回答</span>
@@ -415,16 +419,25 @@ async function submitAnswer() {
       content,
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
     });
-    // Increment answer count and store latest answer preview
+    // Increment answer count and store recent answers (max 3) for card preview
     const preview = content.length > 80 ? content.substring(0, 80) + '...' : content;
-    await db.collection('questions').doc(state.currentQuestionId).update({
-      answerCount: firebase.firestore.FieldValue.increment(1),
-      latestAnswer: {
-        id: answerRef.id,
-        authorName: state.displayName,
-        content: preview,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      }
+    const newAnswerEntry = {
+      id: answerRef.id,
+      authorName: state.displayName,
+      content: preview,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    };
+    // Use transaction to safely update recentAnswers
+    await db.runTransaction(async (transaction) => {
+      const qDoc = await transaction.get(db.collection('questions').doc(state.currentQuestionId));
+      if (!qDoc.exists) return;
+      let recent = qDoc.data().recentAnswers || [];
+      recent.unshift(newAnswerEntry);
+      if (recent.length > 3) recent = recent.slice(0, 3);
+      transaction.update(db.collection('questions').doc(state.currentQuestionId), {
+        answerCount: firebase.firestore.FieldValue.increment(1),
+        recentAnswers: recent,
+      });
     });
     $('detailAnswerInput').value = '';
     // Reload answers

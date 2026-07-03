@@ -288,12 +288,17 @@ header h1 {
   border-top: 1px solid var(--border);
 }
 
-/* ===== Card Latest Answer Preview ===== */
-.card-latest-answer {
+/* ===== Card Answers Preview ===== */
+.card-answers-preview {
   margin: 8px 0 0;
-  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.card-answer-item {
+  padding: 6px 10px;
   background: #F8FAFC;
-  border-radius: 8px;
+  border-radius: 6px;
   border-left: 3px solid var(--primary-light);
   font-size: 13px;
   line-height: 1.5;
@@ -301,17 +306,29 @@ header h1 {
   align-items: baseline;
   gap: 6px;
 }
-.card-latest-answer .latest-answer-author {
+.card-answer-author {
   font-weight: 600;
   color: var(--primary);
   white-space: nowrap;
   flex-shrink: 0;
+  font-size: 12px;
 }
-.card-latest-answer .latest-answer-content {
+.card-answer-text {
   color: var(--text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: 12px;
+}
+.card-answers-more {
+  font-size: 12px;
+  color: var(--primary);
+  padding: 4px 10px;
+  cursor: pointer;
+  font-weight: 500;
+}
+.card-answers-more:hover {
+  text-decoration: underline;
 }
   display: flex;
   align-items: center;
