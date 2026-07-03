@@ -1,0 +1,46 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 用户资料：任何人可读取，用户自己可写入
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && request.auth.uid == userId;
+      allow delete: if false;
+    }
+
+    // 问题：
+    //   - 所有人可见的问题：任何认证用户可读
+    //   - 仅老师可见：只有作者和管理员可读
+    //   - 创建：任何认证用户
+    //   - 更新：只有作者
+    //   - 删除：只有作者或管理员 (bnuxiewei@gmail.com)
+    match /questions/{questionId} {
+      allow read: if request.auth != null && (
+        resource.data.visibility == 'public' ||
+        resource.data.authorId == request.auth.uid ||
+        request.auth.token.email == 'bnuxiewei@gmail.com'
+      );
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && request.auth.uid == resource.data.authorId;
+      allow delete: if request.auth != null && (
+        request.auth.uid == resource.data.authorId ||
+        request.auth.token.email == 'bnuxiewei@gmail.com'
+      );
+    }
+
+    // 回答：
+    //   - 任何认证用户可读
+    //   - 创建：任何认证用户
+    //   - 删除：只有作者或管理员
+    match /answers/{answerId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow delete: if request.auth != null && (
+        request.auth.uid == resource.data.authorId ||
+        request.auth.token.email == 'bnuxiewei@gmail.com'
+      );
+    }
+  }
+}

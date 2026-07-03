@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>课堂答疑</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>❓</text></svg>">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ===== Login View ===== -->
+<div id="loginView" class="view active">
+  <div class="login-container">
+    <h1>课堂答疑</h1>
+    <p class="subtitle">写下你的疑问，让学习更高效</p>
+    <div class="login-tabs">
+      <button class="tab active" data-tab="student">学生</button>
+      <button class="tab" data-tab="teacher">老师</button>
+    </div>
+
+    <!-- Student Login -->
+    <div id="studentLogin" class="login-form active">
+      <input type="text" id="studentName" placeholder="请输入你的名字（如：张三）" maxlength="20" autocomplete="off">
+      <div class="login-error" id="loginError"></div>
+      <button id="studentLoginBtn" onclick="loginAsStudent()">进入课堂</button>
+    </div>
+
+    <!-- Teacher Login -->
+    <div id="teacherLogin" class="login-form">
+      <input type="email" id="teacherEmail" placeholder="管理员邮箱" value="bnuxiewei@gmail.com" readonly style="background:#F3F4F6;color:#6B7280">
+      <input type="password" id="teacherPassword" placeholder="密码" autocomplete="current-password">
+      <button id="teacherLoginBtn" onclick="loginAsAdmin()">登录</button>
+    </div>
+
+    <p style="text-align:center;margin-top:20px;font-size:12px;color:var(--text-secondary)">
+      学生无需注册，输入名字即可进入
+    </p>
+  </div>
+</div>
+
+<!-- ===== Board View ===== -->
+<div id="boardView" class="view">
+  <header>
+    <h1>课堂答疑</h1>
+    <div class="header-right">
+      <span class="user-name" id="headerUserName"></span>
+      <span class="btn-admin-badge" id="headerAdminBadge" style="display:none">管理员</span>
+      <button class="btn-qr" id="headerQrBtn" style="display:none" onclick="showQRCode()">二维码</button>
+      <button class="btn-logout" onclick="logout()">退出</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="board-toolbar">
+      <div class="filter-group" id="filterGroup">
+        <button class="filter-btn active" data-filter="all">全部</button>
+        <button class="filter-btn" data-filter="mine" id="myFilterBtn">我的问题</button>
+      </div>
+      <span class="question-count" id="questionCount">共 0 个问题</span>
+    </div>
+    <div id="questionList">
+      <div class="loading">
+        <div class="spinner"></div>
+        加载中...
+      </div>
+    </div>
+  </main>
+
+  <!-- FAB -->
+  <button class="fab" onclick="showAskModal()" id="fabBtn" title="提出问题">+</button>
+</div>
+
+<!-- ===== Ask Question Modal ===== -->
+<div id="askModalOverlay" class="modal-overlay"></div>
+<div id="askModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-handle"></div>
+    <h2>📝 提出问题</h2>
+    <textarea id="questionContent" placeholder="写下你的疑问..." maxlength="2000"></textarea>
+    <label class="visibility-toggle">
+      <input type="checkbox" id="visibilityPublic" checked>
+      <div>
+        <div class="toggle-label">所有人可见</div>
+        <div class="toggle-hint">其他同学可以看到你的问题并回答</div>
+      </div>
+    </label>
+    <button class="btn-primary" id="submitQuestionBtn" onclick="submitQuestion()">提交问题</button>
+  </div>
+</div>
+
+<!-- ===== Question Detail Modal ===== -->
+<div id="detailModalOverlay" class="modal-overlay"></div>
+<div id="detailModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-handle"></div>
+    <div class="detail-question">
+      <h3 id="detailContent"></h3>
+      <div class="detail-meta">
+        <span id="detailAuthor"></span>
+        <span>·</span>
+        <span id="detailTime"></span>
+        <span>·</span>
+        <span id="detailVisibility"></span>
+      </div>
+      <div class="detail-actions">
+        <button class="btn-danger" id="detailDeleteBtn" style="display:none" onclick="confirmDeleteQuestion(state.currentQuestionId)">删除问题</button>
+      </div>
+    </div>
+    <div class="answers-section">
+      <h4>回答</h4>
+      <div id="answersList">
+        <div style="text-align:center;padding:20px;color:var(--text-secondary);font-size:14px">暂无回答</div>
+      </div>
+      <div class="answer-input-area" id="detailAnswerArea" style="display:none">
+        <input type="text" id="detailAnswerInput" placeholder="" maxlength="1000">
+        <button id="detailAnswerBtn" onclick="submitAnswer()">回答</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== QR Code Modal ===== -->
+<div id="qrModalOverlay" class="modal-overlay"></div>
+<div id="qrModal" class="modal">
+  <div class="modal-content qr-content">
+    <div class="modal-handle"></div>
+    <h2>📱 扫码进入</h2>
+    <img id="qrImage" src="" alt="QR Code">
+    <p class="qr-url" id="qrUrl"></p>
+    <p style="font-size:13px;color:var(--text-secondary);margin-top:12px">请将此页面部署到 GitHub Pages 后使用</p>
+    <button class="btn-secondary" style="margin-top:12px;width:100%" onclick="closeModal('qrModal')">关闭</button>
+  </div>
+</div>
+
+<!-- ===== Confirm Dialog ===== -->
+<div id="confirmOverlay" class="modal-overlay"></div>
+<div id="confirmBox" class="modal" style="align-items:center">
+  <div class="confirm-box">
+    <h3 id="confirmTitle">确定？</h3>
+    <p id="confirmMessage">此操作不可恢复</p>
+    <div class="confirm-actions">
+      <button class="btn-cancel" id="confirmCancelBtn">取消</button>
+      <button class="btn-destroy" id="confirmDestroyBtn">删除</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Toast ===== -->
+<div id="toast" class="toast"></div>
+
+<!-- ===== Firebase SDK ===== -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+
+<!-- ===== App ===== -->
+<script src="js/firebase-config.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
