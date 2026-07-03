@@ -513,28 +513,28 @@ document.addEventListener('DOMContentLoaded', () => {
   auth.onAuthStateChanged(async user => {
     if (isAuthHandling) return; // 避免与 loginAsStudent/loginAsAdmin 重复处理
     if (user) {
-      // Already logged in
+      // 如果检测到管理员已登录，自动登出，强制走登录页
+      if (user.email === ADMIN_EMAIL) {
+        await auth.signOut();
+        return;
+      }
       state.user = user;
-      state.isAdmin = user.email === ADMIN_EMAIL;
-      if (state.isAdmin) {
-        state.displayName = '管理员';
+      state.isAdmin = false;
+      // 优先从 localStorage 读取，否则从 Firestore 恢复
+      const savedName = localStorage.getItem('qa_displayName');
+      if (savedName) {
+        state.displayName = savedName;
       } else {
-        // 优先从 localStorage 读取，否则从 Firestore 恢复
-        const savedName = localStorage.getItem('qa_displayName');
-        if (savedName) {
-          state.displayName = savedName;
-        } else {
-          try {
-            const userDoc = await db.collection('users').doc(user.uid).get();
-            if (userDoc.exists) {
-              state.displayName = userDoc.data().displayName || '同学';
-              localStorage.setItem('qa_displayName', state.displayName);
-            } else {
-              state.displayName = '同学';
-            }
-          } catch {
+        try {
+          const userDoc = await db.collection('users').doc(user.uid).get();
+          if (userDoc.exists) {
+            state.displayName = userDoc.data().displayName || '同学';
+            localStorage.setItem('qa_displayName', state.displayName);
+          } else {
             state.displayName = '同学';
           }
+        } catch {
+          state.displayName = '同学';
         }
       }
       // Update or create user doc
