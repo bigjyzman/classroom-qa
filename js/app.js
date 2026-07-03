@@ -146,56 +146,26 @@ async function enterBoard() {
 // ===== Firestore Listeners =====
 function startListening() {
   if (state.unsubscribe) state.unsubscribe();
-  let query;
-  if (state.isAdmin) {
-    query = db.collection('questions');
-  } else {
-    query = db.collection('questions')
-      .where('visibility', '==', 'public');
-  }
-  state.unsubscribe = query.onSnapshot(snapshot => {
+  // 查询全部问题，客户端过滤
+  state.unsubscribe = db.collection('questions').onSnapshot(snapshot => {
     const allQuestions = [];
-    const seen = new Set();
     snapshot.forEach(doc => {
       const data = doc.data();
       data.id = doc.id;
       data._time = data.createdAt;
+      // 如果是学生，过滤掉非自己的teacher_only问题
+      if (!state.isAdmin && data.visibility === 'teacher_only' && data.authorId !== state.user.uid) {
+        return;
+      }
       allQuestions.push(data);
-      seen.add(doc.id);
     });
-    // If student, also fetch their own private questions
-    if (!state.isAdmin) {
-      db.collection('questions')
-        .where('authorId', '==', state.user.uid)
-        .where('visibility', '==', 'teacher_only')
-        .get()
-        .then(snap2 => {
-          snap2.forEach(doc => {
-            if (!seen.has(doc.id)) {
-              const data = doc.data();
-              data.id = doc.id;
-              data._time = data.createdAt;
-              allQuestions.push(data);
-              seen.add(doc.id);
-            }
-          });
-          allQuestions.sort((a, b) => {
-            const ta = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : 0) : 0;
-            const tb = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : 0) : 0;
-            return tb - ta;
-          });
-          state.questions = allQuestions;
-          renderQuestions();
-        });
-    } else {
-      allQuestions.sort((a, b) => {
-        const ta = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : 0) : 0;
-        const tb = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : 0) : 0;
-        return tb - ta;
-      });
-      state.questions = allQuestions;
-      renderQuestions();
-    }
+    allQuestions.sort((a, b) => {
+      const ta = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : 0) : 0;
+      const tb = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : 0) : 0;
+      return tb - ta;
+    });
+    state.questions = allQuestions;
+    renderQuestions();
   }, error => {
     console.error('Listener error:', error);
     showToast('加载问题失败，请检查网络');
