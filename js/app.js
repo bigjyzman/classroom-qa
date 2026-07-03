@@ -421,23 +421,18 @@ async function submitAnswer() {
     });
     // Increment answer count and store recent answers (max 3) for card preview
     const preview = content.length > 80 ? content.substring(0, 80) + '...' : content;
-    const newAnswerEntry = {
+    const qRef = db.collection('questions').doc(state.currentQuestionId);
+    const qSnap = await qRef.get();
+    const recent = ((qSnap.data() && qSnap.data().recentAnswers) || []).slice(0, 2);
+    recent.unshift({
       id: answerRef.id,
       authorName: state.displayName,
       content: preview,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-    };
-    // Use transaction to safely update recentAnswers
-    await db.runTransaction(async (transaction) => {
-      const qDoc = await transaction.get(db.collection('questions').doc(state.currentQuestionId));
-      if (!qDoc.exists) return;
-      let recent = qDoc.data().recentAnswers || [];
-      recent.unshift(newAnswerEntry);
-      if (recent.length > 3) recent = recent.slice(0, 3);
-      transaction.update(db.collection('questions').doc(state.currentQuestionId), {
-        answerCount: firebase.firestore.FieldValue.increment(1),
-        recentAnswers: recent,
-      });
+      createdAt: new Date(),
+    });
+    await qRef.update({
+      answerCount: firebase.firestore.FieldValue.increment(1),
+      recentAnswers: recent,
     });
     $('detailAnswerInput').value = '';
     // Reload answers
