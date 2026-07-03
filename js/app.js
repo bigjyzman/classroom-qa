@@ -215,9 +215,11 @@ function renderQuestions() {
   const container = $('questionList');
   let filtered = state.questions;
 
-  // Apply filter
+  // Apply filter - also match by displayName for anonymous sessions that changed uid
   if (!state.isAdmin && state.filter === 'mine') {
-    filtered = filtered.filter(q => q.authorId === state.user.uid);
+    const currentUid = state.user.uid;
+    const currentName = state.displayName;
+    filtered = filtered.filter(q => q.authorId === currentUid || q.authorName === currentName);
   }
 
   if (filtered.length === 0) {
@@ -260,7 +262,7 @@ function renderQuestionCard(q) {
           <span class="card-answer-author">${escapeHtml(a.authorName)}</span>
           <span class="card-answer-text">${escapeHtml(a.content)}</span>
         </div>`).join('')}
-        ${answerCount > 3 ? `<div class="card-answers-more">查看全部 ${answerCount} 条回答</div>` : ''}
+        ${answerCount > recent.length ? `<div class="card-answers-more">还有 ${answerCount - recent.length} 条回答...</div>` : ''}
       </div>` : ''}
       <div class="card-footer">
         <span class="card-stat">💬 ${answerCount} 个回答</span>
@@ -425,7 +427,7 @@ async function submitAnswer() {
     const preview = content.length > 80 ? content.substring(0, 80) + '...' : content;
     const qRef = db.collection('questions').doc(state.currentQuestionId);
     const qSnap = await qRef.get();
-    const recent = ((qSnap.data() && qSnap.data().recentAnswers) || []).slice(0, 2);
+    const recent = ((qSnap.data() && qSnap.data().recentAnswers) || []).slice(0, 9);
     recent.unshift({
       id: answerRef.id,
       authorName: state.displayName,
@@ -521,16 +523,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Check auth state on load
   auth.onAuthStateChanged(async user => {
-    if (isAuthHandling) return; // 避免与 loginAsStudent/loginAsAdmin 重复处理
+    if (isAuthHandling) return;
     if (user) {
-      // 如果检测到管理员已登录，自动登出，强制走登录页
+      // 管理员自动登出，然后触发自动匿名登录（如果有学生名缓存）
       if (user.email === ADMIN_EMAIL) {
+        isAuthHandling = true;
         await auth.signOut();
+        isAuthHandling = false;
+        // 登出后自动匿名登录学生身份
+        const savedName = localStorage.getItem('qa_displayName');
+        if (savedName) {
+          $('studentName').value = savedName;
+          loginAsStudent();
+        }
         return;
       }
+      // 匿名学生用户
       state.user = user;
       state.isAdmin = false;
-      // 优先从 localStorage 读取，否则从 Firestore 恢复
       const savedName = localStorage.getItem('qa_displayName');
       if (savedName) {
         state.displayName = savedName;
@@ -547,11 +557,10 @@ document.addEventListener('DOMContentLoaded', () => {
           state.displayName = '同学';
         }
       }
-      // Update or create user doc
       try {
         await db.collection('users').doc(user.uid).set({
           displayName: state.displayName,
-          role: state.isAdmin ? 'admin' : 'student',
+          role: 'student',
           lastLoginAt: firebase.firestore.FieldValue.serverTimestamp(),
         }, { merge: true });
       } catch (e) {
@@ -561,6 +570,13 @@ document.addEventListener('DOMContentLoaded', () => {
       renderHeader();
       startListening();
     } else {
+      // 无登录状态：如果 localStorage 有学生名，自动匿名登录
+      const savedName = localStorage.getItem('qa_displayName');
+      if (savedName) {
+        $('studentName').value = savedName;
+        loginAsStudent();
+        return;
+      }
       showView('login');
     }
   });
