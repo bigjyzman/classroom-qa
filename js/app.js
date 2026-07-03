@@ -357,15 +357,24 @@ async function openQuestionDetail(questionId) {
   try {
     const snap = await db.collection('answers')
       .where('questionId', '==', questionId)
-      .orderBy('createdAt', 'asc')
       .get();
     if (snap.empty) {
       $('answersList').innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-secondary);font-size:14px">暂无回答</div>';
       return;
     }
-    let html = '';
+    const answers = [];
     snap.forEach(doc => {
       const a = doc.data();
+      a.id = doc.id;
+      answers.push(a);
+    });
+    answers.sort((a, b) => {
+      const ta = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : 0) : 0;
+      const tb = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : 0) : 0;
+      return ta - tb;
+    });
+    let html = '';
+    answers.forEach(a => {
       const isAnswerOwner = state.user && a.authorId === state.user.uid;
       const canDeleteAnswer = isAnswerOwner || state.isAdmin;
       html += `
@@ -374,7 +383,7 @@ async function openQuestionDetail(questionId) {
             <span class="answer-author">${escapeHtml(a.authorName || '匿名')}</span>
             <div style="display:flex;align-items:center;gap:8px">
               <span class="answer-time">${timeAgo(a.createdAt)}</span>
-              ${canDeleteAnswer ? `<span style="color:var(--danger);font-size:12px;cursor:pointer" onclick="deleteAnswer('${doc.id}','${questionId}')">删除</span>` : ''}
+              ${canDeleteAnswer ? `<span style="color:var(--danger);font-size:12px;cursor:pointer" onclick="deleteAnswer('${a.id}','${questionId}')">删除</span>` : ''}
             </div>
           </div>
           <div class="answer-content">${escapeHtml(a.content)}</div>
