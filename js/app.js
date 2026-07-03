@@ -8,6 +8,7 @@ auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
 const ADMIN_EMAIL = 'bnuxiewei@gmail.com';
 let isAuthHandling = false; // 防止重复处理认证状态
+let manualLogout = false; // 手动退出时不自动登录
 
 // ===== 状态管理 =====
 const state = {
@@ -129,6 +130,7 @@ async function logout() {
   closeModal('askModal');
   closeModal('detailModal');
   closeModal('qrModal');
+  manualLogout = true;
   await auth.signOut();
   showView('login');
 }
@@ -570,13 +572,16 @@ document.addEventListener('DOMContentLoaded', () => {
       renderHeader();
       startListening();
     } else {
-      // 无登录状态：如果 localStorage 有学生名，自动匿名登录
-      const savedName = localStorage.getItem('qa_displayName');
-      if (savedName) {
-        $('studentName').value = savedName;
-        loginAsStudent();
-        return;
+      // 无登录状态：如果 localStorage 有学生名，自动匿名登录（只有首次打开页面时自动）
+      if (!manualLogout) {
+        const savedName = localStorage.getItem('qa_displayName');
+        if (savedName) {
+          $('studentName').value = savedName;
+          loginAsStudent();
+          return;
+        }
       }
+      manualLogout = false;
       showView('login');
     }
   });
