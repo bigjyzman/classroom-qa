@@ -214,7 +214,7 @@ function renderQuestions() {
 function renderQuestionCard(q) {
   const isPrivate = q.visibility === 'teacher_only';
   const answerCount = q.answerCount || 0;
-  const isOwner = state.user && q.authorId === state.user.uid;
+  const isOwner = state.user && (q.authorId === state.user.uid || q.authorName === state.displayName);
   const recent = q.recentAnswers || [];
 
   return `
@@ -228,7 +228,7 @@ function renderQuestionCard(q) {
           </span>
         </div>
       </div>
-      ${q.deleted && state.isAdmin ? `<div class="card-deleted-badge">已删除</div>` : '}
+      ${q.deleted && state.isAdmin ? '<div class="card-deleted-badge">已删除</div>' : ''}
       <div class="card-content">${escapeHtml(q.content)}</div>
       ${recent.length > 0 ? `
       <div class="card-answers-preview">
@@ -309,7 +309,7 @@ async function deleteQuestion(questionId) {
 function confirmDeleteQuestion(questionId) {
   const q = state.questions.find(q => q.id === questionId);
   if (!q) return;
-  const canDelete = state.isAdmin || (state.user && q.authorId === state.user.uid);
+  const canDelete = state.isAdmin || (state.user && q.authorId === state.user.uid) || (state.user && q.authorName === state.displayName);
   if (!canDelete) { showToast('无权删除'); return; }
   const overlay = $('confirmOverlay');
   const box = $('confirmBox');
@@ -343,7 +343,7 @@ async function openQuestionDetail(questionId) {
   $('detailAuthor').textContent = q.authorName || '匿名';
   $('detailTime').textContent = timeAgo(q.createdAt);
   $('detailVisibility').textContent = q.visibility === 'teacher_only' ? '仅老师可见' : '所有人可见';
-  $('detailDeleteBtn').style.display = (state.isAdmin || (state.user && q.authorId === state.user.uid)) ? 'inline-block' : 'none';
+  $('detailDeleteBtn').style.display = (state.isAdmin || (state.user && (q.authorId === state.user.uid || q.authorName === state.displayName))) ? 'inline-block' : 'none';
 
   // Answer input visibility
   const canAnswer = state.isAdmin || q.visibility === 'public';
