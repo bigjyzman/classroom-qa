@@ -227,7 +227,7 @@ function renderQuestions() {
       <div class="empty-state">
         <div class="icon">📝</div>
         <h3>还没有问题</h3>
-        <p>点击右下角的 + 按钮提出问题</p>
+        <p>点击上方的「＋ 提问」按钮提出问题</p>
       </div>
     `;
     return;

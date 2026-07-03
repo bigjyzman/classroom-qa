@@ -221,6 +221,29 @@ header h1 {
   color: var(--text-secondary);
 }
 
+/* ===== Ask Button ===== */
+.btn-ask {
+  padding: 8px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+  background: var(--primary);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(79, 70, 229, 0.3);
+}
+.btn-ask:hover {
+  background: var(--primary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+}
+.btn-ask:active {
+  transform: translateY(0);
+}
+
 /* ===== Question Card ===== */
 .question-card {
   background: var(--card);
@@ -366,29 +389,6 @@ header h1 {
 .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
 .empty-state h3 { font-size: 16px; margin-bottom: 6px; color: var(--text); }
 .empty-state p { font-size: 14px; }
-
-/* ===== FAB ===== */
-.fab {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  border: none;
-  background: var(--primary);
-  color: white;
-  font-size: 28px;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 40;
-}
-.fab:hover { transform: scale(1.05); background: var(--primary-dark); }
-.fab:active { transform: scale(0.95); }
 
 /* ===== Modal ===== */
 .modal-overlay {
@@ -767,7 +767,6 @@ header h1 {
   }
   .modal-handle { display: none; }
   .header-right .user-name { display: inline; }
-  .fab { bottom: 32px; right: 32px; }
 }
 @media (max-width: 380px) {
   .login-container { padding: 24px 18px; }

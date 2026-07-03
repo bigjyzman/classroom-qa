@@ -57,7 +57,7 @@
         <button class="filter-btn active" data-filter="all">全部</button>
         <button class="filter-btn" data-filter="mine" id="myFilterBtn">我的问题</button>
       </div>
-      <span class="question-count" id="questionCount">共 0 个问题</span>
+      <button class="btn-ask" onclick="showAskModal()">＋ 提问</button>
     </div>
     <div id="questionList">
       <div class="loading">
@@ -66,9 +66,6 @@
       </div>
     </div>
   </main>
-
-  <!-- FAB -->
-  <button class="fab" onclick="showAskModal()" id="fabBtn" title="提出问题">+</button>
 </div>
 
 <!-- ===== Ask Question Modal ===== -->
