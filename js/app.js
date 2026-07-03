@@ -237,6 +237,7 @@ function renderQuestionCard(q) {
   const isPrivate = q.visibility === 'teacher_only';
   const answerCount = q.answerCount || 0;
   const isOwner = state.user && q.authorId === state.user.uid;
+  const latest = q.latestAnswer;
 
   return `
     <div class="question-card ${isPrivate ? 'teacher-only' : ''}" onclick="openQuestionDetail('${q.id}')">
@@ -250,6 +251,11 @@ function renderQuestionCard(q) {
         </div>
       </div>
       <div class="card-content">${escapeHtml(q.content)}</div>
+      ${latest ? `
+      <div class="card-latest-answer">
+        <span class="latest-answer-author">${escapeHtml(latest.authorName)}</span>
+        <span class="latest-answer-content">${escapeHtml(latest.content)}</span>
+      </div>` : ''}
       <div class="card-footer">
         <span class="card-stat">💬 ${answerCount} 个回答</span>
         ${isOwner ? `<span class="card-stat" style="color:var(--danger)">点击可删除</span>` : ''}
@@ -402,16 +408,23 @@ async function submitAnswer() {
   if (!state.currentQuestionId) return;
   $('detailAnswerBtn').disabled = true;
   try {
-    await db.collection('answers').add({
+    const answerRef = await db.collection('answers').add({
       questionId: state.currentQuestionId,
       authorId: state.user.uid,
       authorName: state.displayName,
       content,
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
     });
-    // Increment answer count
+    // Increment answer count and store latest answer preview
+    const preview = content.length > 80 ? content.substring(0, 80) + '...' : content;
     await db.collection('questions').doc(state.currentQuestionId).update({
-      answerCount: firebase.firestore.FieldValue.increment(1)
+      answerCount: firebase.firestore.FieldValue.increment(1),
+      latestAnswer: {
+        id: answerRef.id,
+        authorName: state.displayName,
+        content: preview,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      }
     });
     $('detailAnswerInput').value = '';
     // Reload answers
