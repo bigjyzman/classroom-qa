@@ -631,6 +631,7 @@ header h1 {
 
 /* ===== Confirm Dialog ===== */
 .confirm-box {
+  pointer-events: auto;
   background: white;
   border-radius: 16px;
   padding: 28px 24px;
