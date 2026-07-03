@@ -154,7 +154,7 @@ function startListening() {
       data.id = doc.id;
       data._time = data.createdAt;
       // 如果是学生，过滤掉非自己的teacher_only问题
-      if (!state.isAdmin && data.visibility === 'teacher_only' && data.authorId !== state.user.uid) {
+      if (!state.isAdmin && data.visibility === 'teacher_only' && data.authorId !== state.user.uid && data.authorName !== state.displayName) {
         return;
       }
       allQuestions.push(data);
@@ -410,8 +410,9 @@ async function submitAnswer() {
       recentAnswers: recent,
     });
     $('detailAnswerInput').value = '';
-    // Reload answers
-    openQuestionDetail(state.currentQuestionId);
+    // 回答后关闭详情，回到列表（卡片已有回答预览）
+    closeModal('detailModal');
+    showToast('回答已提交');
   } catch (e) {
     console.error('Submit answer error:', e);
     showToast('提交回答失败：' + e.message);
