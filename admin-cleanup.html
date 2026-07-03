@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数据清理</title>
+<style>
+body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #F0F2F5; }
+.card { background: white; padding: 40px; border-radius: 12px; max-width: 500px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+h1 { font-size: 20px; margin-bottom: 8px; }
+p { color: #666; font-size: 14px; margin-bottom: 20px; }
+.btn { padding: 12px 24px; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; margin: 8px; font-weight: 600; }
+.btn-danger { background: #EF4444; color: white; }
+.btn-secondary { background: #E5E7EB; color: #374151; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+#log { margin-top: 16px; text-align: left; font-size: 13px; color: #666; max-height: 300px; overflow-y: auto; }
+#log div { padding: 4px 0; border-bottom: 1px solid #eee; }
+.email-input { width: 100%; padding: 10px; border: 2px solid #E2E8F0; border-radius: 8px; font-size: 14px; margin-bottom: 12px; box-sizing: border-box; outline: none; }
+.email-input:focus { border-color: #4F46E5; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>🧹 数据清理工具</h1>
+  <p>管理员登入后，清空所有问题和回答数据</p>
+  <input type="email" class="email-input" id="email" value="bnuxiewei@gmail.com" readonly style="background:#F3F4F6">
+  <input type="password" class="email-input" id="password" placeholder="管理员密码">
+  <div>
+    <button class="btn btn-danger" id="loginBtn" onclick="loginAndClear()">登录并清空数据</button>
+  </div>
+  <div id="log"></div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyBo6oNWhrLXNooQyGJylr4QrDdf_dnRQ2c",
+  authDomain: "classroom-qa-d088d.firebaseapp.com",
+  projectId: "classroom-qa-d088d",
+  storageBucket: "classroom-qa-d088d.firebasestorage.app",
+  messagingSenderId: "222937942049",
+  appId: "1:222937942049:web:2af26128e36e9fbf7ebb60"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+function log(msg) {
+  const el = document.getElementById('log');
+  el.innerHTML += '<div>' + msg + '</div>';
+  el.scrollTop = el.scrollHeight;
+}
+
+async function deleteAll(collection) {
+  const snap = await db.collection(collection).get();
+  log(`找到 ${snap.size} 条 ${collection}`);
+  if (snap.empty) return 0;
+  let count = 0;
+  const batchSize = 400;
+  let docs = [];
+  snap.forEach(doc => docs.push(doc));
+  for (let i = 0; i < docs.length; i += batchSize) {
+    const batch = db.batch();
+    const chunk = docs.slice(i, i + batchSize);
+    chunk.forEach(doc => batch.delete(doc.ref));
+    await batch.commit();
+    count += chunk.length;
+    log(`已删除 ${count}/${snap.size} 条 ${collection}`);
+  }
+  return count;
+}
+
+async function loginAndClear() {
+  const password = document.getElementById('password').value;
+  const email = document.getElementById('email').value;
+  if (!password) { log('请输入管理员密码'); return; }
+
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true;
+  btn.textContent = '登录中...';
+
+  try {
+    await auth.signInWithEmailAndPassword(email, password);
+    log('✅ 管理员登录成功');
+    btn.textContent = '正在清理...';
+
+    // 先删 answers，再删 questions（因为有外键关联不严格）
+    const aCount = await deleteAll('answers');
+    const qCount = await deleteAll('questions');
+
+    log(`✅ 清理完成！删除了 ${qCount} 个问题、${aCount} 条回答`);
+    btn.textContent = '清理完成';
+    await auth.signOut();
+  } catch (e) {
+    log('❌ 失败：' + e.message);
+    btn.disabled = false;
+    btn.textContent = '登录并清空数据';
+  }
+}
+</script>
+</body>
+</html>
