@@ -147,11 +147,10 @@ function startListening() {
   if (state.unsubscribe) state.unsubscribe();
   let query;
   if (state.isAdmin) {
-    query = db.collection('questions').orderBy('createdAt', 'desc');
+    query = db.collection('questions');
   } else {
     query = db.collection('questions')
-      .where('visibility', '==', 'public')
-      .orderBy('createdAt', 'desc');
+      .where('visibility', '==', 'public');
   }
   state.unsubscribe = query.onSnapshot(snapshot => {
     const allQuestions = [];
@@ -168,7 +167,6 @@ function startListening() {
       db.collection('questions')
         .where('authorId', '==', state.user.uid)
         .where('visibility', '==', 'teacher_only')
-        .orderBy('createdAt', 'desc')
         .get()
         .then(snap2 => {
           snap2.forEach(doc => {
@@ -189,6 +187,11 @@ function startListening() {
           renderQuestions();
         });
     } else {
+      allQuestions.sort((a, b) => {
+        const ta = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : 0) : 0;
+        const tb = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : 0) : 0;
+        return tb - ta;
+      });
       state.questions = allQuestions;
       renderQuestions();
     }
