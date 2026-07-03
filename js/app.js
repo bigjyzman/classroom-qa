@@ -8,7 +8,6 @@ auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
 const ADMIN_EMAIL = 'bnuxiewei@gmail.com';
 let isAuthHandling = false; // 防止重复处理认证状态
-let manualLogout = false; // 手动退出时不自动登录
 
 // ===== 状态管理 =====
 const state = {
@@ -130,7 +129,7 @@ async function logout() {
   closeModal('askModal');
   closeModal('detailModal');
   closeModal('qrModal');
-  manualLogout = true;
+  localStorage.removeItem('qa_displayName');
   await auth.signOut();
   showView('login');
 }
@@ -523,66 +522,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const savedName = localStorage.getItem('qa_displayName');
   if (savedName) $('studentName').value = savedName;
 
-  // Check auth state on load
-  auth.onAuthStateChanged(async user => {
-    if (isAuthHandling) return;
-    if (user) {
-      // 管理员自动登出，然后触发自动匿名登录（如果有学生名缓存）
-      if (user.email === ADMIN_EMAIL) {
-        isAuthHandling = true;
-        await auth.signOut();
-        isAuthHandling = false;
-        // 登出后自动匿名登录学生身份
-        const savedName = localStorage.getItem('qa_displayName');
-        if (savedName) {
-          $('studentName').value = savedName;
-          loginAsStudent();
-        }
-        return;
-      }
-      // 匿名学生用户
-      state.user = user;
-      state.isAdmin = false;
-      const savedName = localStorage.getItem('qa_displayName');
-      if (savedName) {
-        state.displayName = savedName;
-      } else {
-        try {
-          const userDoc = await db.collection('users').doc(user.uid).get();
-          if (userDoc.exists) {
-            state.displayName = userDoc.data().displayName || '同学';
-            localStorage.setItem('qa_displayName', state.displayName);
-          } else {
-            state.displayName = '同学';
-          }
-        } catch {
-          state.displayName = '同学';
-        }
-      }
-      try {
-        await db.collection('users').doc(user.uid).set({
-          displayName: state.displayName,
-          role: 'student',
-          lastLoginAt: firebase.firestore.FieldValue.serverTimestamp(),
-        }, { merge: true });
-      } catch (e) {
-        console.warn('Failed to update user doc:', e);
-      }
-      showView('board');
-      renderHeader();
-      startListening();
-    } else {
-      // 无登录状态：如果 localStorage 有学生名，自动匿名登录（只有首次打开页面时自动）
-      if (!manualLogout) {
-        const savedName = localStorage.getItem('qa_displayName');
-        if (savedName) {
-          $('studentName').value = savedName;
-          loginAsStudent();
-          return;
-        }
-      }
-      manualLogout = false;
-      showView('login');
-    }
+  // 页面加载时清除任何残留的登录状态，强制从登录页开始
+  auth.signOut().then(() => {
+    const savedName = localStorage.getItem('qa_displayName');
+    if (savedName) $('studentName').value = savedName;
+    showView('login');
+  }).catch(() => {
+    const savedName = localStorage.getItem('qa_displayName');
+    if (savedName) $('studentName').value = savedName;
+    showView('login');
   });
 });
