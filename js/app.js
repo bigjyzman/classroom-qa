@@ -261,7 +261,7 @@ function renderQuestionCard(q) {
 // ===== Question CRUD =====
 function showAskModal() {
   $('questionContent').value = '';
-  $('visibilityPublic').checked = true;
+  document.querySelector('input[name=visibility][value=public]').checked = true;
   $('submitQuestionBtn').disabled = false;
   $('submitQuestionBtn').textContent = '提交问题';
   openModal('askModal');
@@ -271,7 +271,7 @@ function showAskModal() {
 async function submitQuestion() {
   const content = $('questionContent').value.trim();
   if (!content) { showToast('请输入问题内容'); return; }
-  const visibility = $('visibilityPublic').checked ? 'public' : 'teacher_only';
+  const visibility = document.querySelector('input[name=visibility]:checked')?.value || 'public';
   $('submitQuestionBtn').disabled = true;
   $('submitQuestionBtn').textContent = '提交中...';
   try {
@@ -417,6 +417,7 @@ async function submitAnswer() {
     // Reload answers
     openQuestionDetail(state.currentQuestionId);
   } catch (e) {
+    console.error('Submit answer error:', e);
     showToast('提交回答失败：' + e.message);
   }
   $('detailAnswerBtn').disabled = false;
@@ -484,17 +485,11 @@ document.addEventListener('DOMContentLoaded', () => {
     $('confirmBox').style.display = 'none';
   });
 
-  // Visibility toggle label
-  $('visibilityPublic').addEventListener('change', function() {
-    const label = this.parentElement.querySelector('.toggle-label');
-    const hint = this.parentElement.querySelector('.toggle-hint');
-    if (this.checked) {
-      label.textContent = '所有人可见';
-      hint.textContent = '其他同学可以看到你的问题并回答';
-    } else {
-      label.textContent = '仅老师可见';
-      hint.textContent = '只有老师可以看到你的问题';
-    }
+  // Radio button change label (no-op since each label is static)
+  document.querySelectorAll('input[name=visibility]').forEach(rb => {
+    rb.addEventListener('change', function() {
+      document.querySelectorAll('.visibility-option').forEach(opt => opt.classList.toggle('active', this.checked));
+    });
   });
 
   // Restore student name from localStorage

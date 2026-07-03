@@ -417,6 +417,75 @@ header h1 {
   color: var(--text-secondary);
 }
 
+/* ===== Visibility Radio Buttons ===== */
+.visibility-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 14px 0;
+}
+.visibility-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--bg);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 2px solid transparent;
+}
+.visibility-option:has(input:checked) {
+  background: #EEF2FF;
+  border-color: var(--primary);
+}
+.visibility-option input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.visibility-option .option-label {
+  font-size: 14px;
+  font-weight: 500;
+}
+.visibility-option .option-hint {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* ===== Modal Header Row ===== */
+.modal-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0;
+}
+.modal-header-row .modal-handle {
+  margin: 0 auto 0 0;
+}
+.modal-close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: var(--bg);
+  border-radius: 50%;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.modal-close:hover {
+  background: #E5E7EB;
+  color: var(--text);
+}
+
 .modal .btn-primary {
   width: 100%;
   padding: 12px;

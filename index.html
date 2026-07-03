@@ -78,13 +78,22 @@
     <div class="modal-handle"></div>
     <h2>📝 提出问题</h2>
     <textarea id="questionContent" placeholder="写下你的疑问..." maxlength="2000"></textarea>
-    <label class="visibility-toggle">
-      <input type="checkbox" id="visibilityPublic" checked>
-      <div>
-        <div class="toggle-label">所有人可见</div>
-        <div class="toggle-hint">其他同学可以看到你的问题并回答</div>
-      </div>
-    </label>
+    <div class="visibility-options">
+      <label class="visibility-option">
+        <input type="radio" name="visibility" value="public" checked>
+        <div>
+          <div class="option-label">所有人可见</div>
+          <div class="option-hint">其他同学可以看到你的问题并回答</div>
+        </div>
+      </label>
+      <label class="visibility-option">
+        <input type="radio" name="visibility" value="teacher_only">
+        <div>
+          <div class="option-label">仅老师可见</div>
+          <div class="option-hint">只有老师可以看到你的问题</div>
+        </div>
+      </label>
+    </div>
     <button class="btn-primary" id="submitQuestionBtn" onclick="submitQuestion()">提交问题</button>
   </div>
 </div>
@@ -93,7 +102,10 @@
 <div id="detailModalOverlay" class="modal-overlay"></div>
 <div id="detailModal" class="modal">
   <div class="modal-content">
-    <div class="modal-handle"></div>
+    <div class="modal-header-row">
+      <div class="modal-handle"></div>
+      <button class="modal-close" onclick="closeModal('detailModal')">&times;</button>
+    </div>
     <div class="detail-question">
       <h3 id="detailContent"></h3>
       <div class="detail-meta">
