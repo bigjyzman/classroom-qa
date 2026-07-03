@@ -347,6 +347,7 @@ header h1 {
   z-index: 101;
   align-items: flex-end;
   justify-content: center;
+  pointer-events: none;
 }
 .modal.active { display: flex; }
 
@@ -360,6 +361,7 @@ header h1 {
   overflow-y: auto;
   animation: slideUp 0.3s ease;
   position: relative;
+  pointer-events: auto;
 }
 
 .modal-handle {
