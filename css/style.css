@@ -287,6 +287,18 @@ header h1 {
   padding-top: 10px;
   border-top: 1px solid var(--border);
 }
+.question-card .card-delete-btn {
+  font-size: 12px;
+  color: var(--danger);
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: 4px;
+  transition: background 0.15s;
+  margin-left: auto;
+}
+.question-card .card-delete-btn:hover {
+  background: #FEE2E2;
+}
 
 /* ===== Card Answers Preview ===== */
 .card-answers-preview {

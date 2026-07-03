@@ -206,6 +206,8 @@ function renderHeader() {
   $('headerUserName').textContent = state.displayName;
   $('headerAdminBadge').style.display = state.isAdmin ? 'inline' : 'none';
   $('headerQrBtn').style.display = state.isAdmin ? 'inline-block' : 'none';
+  // 管理员不显示"我的问题"按钮
+  $('myFilterBtn').style.display = state.isAdmin ? 'none' : 'inline-block';
 }
 
 // ===== Render Questions =====
@@ -262,7 +264,7 @@ function renderQuestionCard(q) {
       </div>` : ''}
       <div class="card-footer">
         <span class="card-stat">💬 ${answerCount} 个回答</span>
-        ${isOwner ? `<span class="card-stat" style="color:var(--danger)">点击可删除</span>` : ''}
+        ${(isOwner || state.isAdmin) ? `<span class="card-delete-btn" onclick="event.stopPropagation();confirmDeleteQuestion('${q.id}')">删除</span>` : ''}
       </div>
     </div>
   `;
