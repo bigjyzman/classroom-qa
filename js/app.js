@@ -108,7 +108,7 @@ async function loginAsAdmin() {
       await auth.signOut();
       throw new Error('此邮箱不是管理员账号');
     }
-    state.displayName = '管理员';
+    state.displayName = '老师';
     await enterBoard();
   } catch (e) {
     $('loginError').textContent = '登录失败：' + (e.message || '请检查邮箱和密码');
@@ -153,8 +153,11 @@ function startListening() {
       const data = doc.data();
       data.id = doc.id;
       data._time = data.createdAt;
-      // 如果是学生，过滤掉非自己的teacher_only问题
+      // 如果是学生，过滤掉非自己的teacher_only问题以及已软删除的问题
       if (!state.isAdmin && data.visibility === 'teacher_only' && data.authorId !== state.user.uid && data.authorName !== state.displayName) {
+        return;
+      }
+      if (!state.isAdmin && data.deleted) {
         return;
       }
       allQuestions.push(data);
@@ -215,7 +218,7 @@ function renderQuestionCard(q) {
   const recent = q.recentAnswers || [];
 
   return `
-    <div class="question-card ${isPrivate ? 'teacher-only' : ''}" onclick="openQuestionDetail('${q.id}')">
+    <div class="question-card${q.deleted ? ' deleted' : ''} ${isPrivate ? 'teacher-only' : ''}" onclick="openQuestionDetail('${q.id}')">
       <div class="card-header">
         <span class="card-author">${escapeHtml(q.authorName || '匿名')}</span>
         <div class="card-meta">
@@ -225,6 +228,7 @@ function renderQuestionCard(q) {
           </span>
         </div>
       </div>
+      ${q.deleted && state.isAdmin ? `<div class="card-deleted-badge">已删除</div>` : '}
       <div class="card-content">${escapeHtml(q.content)}</div>
       ${recent.length > 0 ? `
       <div class="card-answers-preview">
@@ -237,7 +241,7 @@ function renderQuestionCard(q) {
       </div>` : ''}
       <div class="card-footer">
         <span class="card-stat">💬 ${answerCount} 个回答</span>
-        ${(isOwner || state.isAdmin) ? `<span class="card-delete-btn" onclick="event.stopPropagation();confirmDeleteQuestion('${q.id}')">删除</span>` : ''}
+        ${(isOwner || state.isAdmin) ? `<span class="card-delete-btn" onclick="event.stopPropagation();confirmDeleteQuestion('${q.id}')">${q.deleted && state.isAdmin ? "彻底删除" : "删除"}</span>` : ''}
       </div>
     </div>
   `;
@@ -279,14 +283,22 @@ async function submitQuestion() {
 
 async function deleteQuestion(questionId) {
   try {
-    // Delete all answers for this question first
-    const answersSnap = await db.collection('answers')
-      .where('questionId', '==', questionId)
-      .get();
-    const batch = db.batch();
-    answersSnap.forEach(doc => batch.delete(doc.ref));
-    batch.delete(db.collection('questions').doc(questionId));
-    await batch.commit();
+    if (state.isAdmin) {
+      // 管理员：彻底删除
+      const answersSnap = await db.collection('answers')
+        .where('questionId', '==', questionId)
+        .get();
+      const batch = db.batch();
+      answersSnap.forEach(doc => batch.delete(doc.ref));
+      batch.delete(db.collection('questions').doc(questionId));
+      await batch.commit();
+    } else {
+      // 学生：软删除，标记为已删除
+      await db.collection('questions').doc(questionId).update({
+        deleted: true,
+        deletedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      });
+    }
     closeModal('detailModal');
     showToast('问题已删除');
   } catch (e) {
@@ -301,8 +313,13 @@ function confirmDeleteQuestion(questionId) {
   if (!canDelete) { showToast('无权删除'); return; }
   const overlay = $('confirmOverlay');
   const box = $('confirmBox');
-  $('confirmTitle').textContent = '删除问题';
-  $('confirmMessage').textContent = '确定要删除这个问题吗？所有回答也将一并删除。';
+  if (state.isAdmin) {
+    $('confirmTitle').textContent = q.deleted ? '彻底删除' : '删除问题';
+    $('confirmMessage').textContent = q.deleted ? '此问题已被学生删除，点击确定将彻底清除所有数据。' : '确定要删除这个问题吗？所有回答也将一并删除。';
+  } else {
+    $('confirmTitle').textContent = '删除问题';
+    $('confirmMessage').textContent = '确定要删除这个问题吗？老师和学生都将看不到。';
+  }
   $('confirmDestroyBtn').onclick = async () => {
     overlay.classList.remove('active');
     box.style.display = 'none';
@@ -363,7 +380,7 @@ async function openQuestionDetail(questionId) {
       const isAnswerOwner = state.user && a.authorId === state.user.uid;
       const canDeleteAnswer = isAnswerOwner || state.isAdmin;
       html += `
-        <div class="answer-item">
+        <div class="answer-item${isAnswerOwner ? " answer-own" : ""}">
           <div class="answer-header">
             <span class="answer-author">${escapeHtml(a.authorName || '匿名')}</span>
             <div style="display:flex;align-items:center;gap:8px">
