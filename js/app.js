@@ -347,7 +347,7 @@ async function openQuestionDetail(questionId) {
   const canAnswer = state.isAdmin || q.visibility === 'public';
   $('detailAnswerArea').style.display = canAnswer ? 'flex' : 'none';
   $('detailAnswerInput').value = '';
-  $('detailAnswerPlaceholder').textContent = state.isAdmin ? '输入回答...' : '输入你的回答...';
+  $('detailAnswerInput').placeholder = state.isAdmin ? '输入回答...' : '输入你的回答...';
   $('detailAnswerBtn').disabled = false;
 
   // Load answers
